@@ -1,0 +1,31 @@
+# Core data manipulation
+pandas
+numpy
+
+# Machine learning
+scikit-learn
+xgboost
+lightgbm
+
+# API interaction
+requests
+python-dotenv
+
+# FastAPI for serving predictions
+fastapi
+uvicorn[standard]
+
+# Streamlit for demo dashboard
+streamlit
+
+# Date/time parsing
+python-dateutil
+
+# File handling
+pyyaml
+
+# Caching API responses
+diskcache
+
+# Jupyter support (optional for notebooks)
+notebook

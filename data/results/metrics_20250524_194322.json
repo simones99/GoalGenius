@@ -1,0 +1,57 @@
+{
+    "logistic": {
+        "accuracy": 0.5128307405930063,
+        "log_loss": 0.998008040072029,
+        "feature_names": [
+            "EloDiff",
+            "FormDiff",
+            "H2H",
+            "IsDerby"
+        ],
+        "train_size": 30084,
+        "val_size": 7521
+    },
+    "random_forest": {
+        "accuracy": 0.5097726366174711,
+        "log_loss": 0.9999052593121729,
+        "best_params": {
+            "class_weight": null,
+            "max_depth": 6,
+            "max_features": "sqrt",
+            "min_samples_leaf": 1,
+            "min_samples_split": 16,
+            "n_estimators": 416
+        },
+        "best_score": -1.0201626445367922,
+        "feature_names": [
+            "EloDiff",
+            "FormDiff",
+            "H2H",
+            "IsDerby"
+        ],
+        "train_size": 30084,
+        "val_size": 7521
+    },
+    "xgboost": {
+        "accuracy": 0.511368169126446,
+        "log_loss": 1.0003853716346138,
+        "best_params": {
+            "colsample_bytree": 0.8439986631130484,
+            "gamma": 0.41659745586808217,
+            "learning_rate": 0.062009396052331626,
+            "max_depth": 3,
+            "min_child_weight": 4,
+            "n_estimators": 149,
+            "subsample": 0.8650089137415928
+        },
+        "best_score": -1.022003031262123,
+        "feature_names": [
+            "EloDiff",
+            "FormDiff",
+            "H2H",
+            "IsDerby"
+        ],
+        "train_size": 30084,
+        "val_size": 7521
+    }
+}
