@@ -172,7 +172,5 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
-
-.vscode/
-data/
-!data/processed/matches_processed.csv
+data/cache/
+data/raw/
