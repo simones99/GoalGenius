@@ -11,31 +11,39 @@ GoalGenius is a machine learning project designed to predict the outcome of club
   - Ingested and cleaned historical match data (2000–2025) from CSVs.
   - Engineered features including Elo difference, recent form, head-to-head, and derby indicators.
 - **Modeling:**
-  - Implemented baseline Logistic Regression, Random Forest, and XGBoost models.
-  - Used time-based train/validation/test splits to avoid data leakage.
-  - Performed hyperparameter tuning with RandomizedSearchCV for tree-based models.
-  - Exported best model and metrics for reproducibility.
+  - Enhanced model training pipeline with proper class imbalance handling
+  - Implemented improved stacking ensemble with time-series cross-validation
+  - Added early stopping for XGBoost to prevent overfitting
+  - Optimized Random Forest with balanced subsample weights
+  - Standardized feature scaling across all models
+  - Used time-based train/validation/test splits to avoid data leakage
+  - Performed hyperparameter tuning with RandomizedSearchCV for tree-based models
+  - Exported best model and metrics for reproducibility
 - **MLOps:**
-  - Organized code into modular structure (src/, models/, data/, notebooks/).
-  - Automated model training and evaluation pipeline.
-  - Set up .gitignore and requirements.txt for clean version control and reproducibility.
+  - Organized code into modular structure (src/, models/, data/, notebooks/)
+  - Automated model training and evaluation pipeline
+  - Improved error handling and logging
+  - Set up .gitignore and requirements.txt for clean version control and reproducibility
 
 ## Next Steps
 - **Feature Engineering:**
-  - Integrate additional features such as league position, points, and advanced form metrics.
-  - Explore external data sources (injuries, weather, odds movement) for further improvements.
+  - Integrate additional features such as league position, points, and advanced form metrics
+  - Explore external data sources (injuries, weather, odds movement) for further improvements
 - **Modeling:**
-  - Experiment with ensemble models and advanced calibration techniques.
-  - Analyze feature importance and model explainability.
+  - Add model calibration techniques for better probability estimates
+  - Implement Bayesian optimization for hyperparameter tuning
+  - Analyze feature importance and model explainability
+  - Consider adding LightGBM as another base model
 - **Real-Time Integration:**
-  - Connect to API-Football for live fixtures and stats.
-  - Implement caching and feature transformation for real-time predictions.
+  - Connect to API-Football for live fixtures and stats
+  - Implement caching and feature transformation for real-time predictions
 - **Deployment:**
-  - Serve predictions via FastAPI endpoint (`GET /predict?fixture_id=<id>`).
-  - Build a Streamlit dashboard for next week’s matches and model insights.
-  - Containerize the app with Docker for easy deployment.
+  - Serve predictions via FastAPI endpoint (`GET /predict?fixture_id=<id>`)
+  - Build a Streamlit dashboard for next week's matches and model insights
+  - Containerize the app with Docker for easy deployment
 - **Automation:**
-  - Set up a cron job to refresh the API cache and update predictions daily.
+  - Set up a cron job to refresh the API cache and update predictions daily
+  - Implement model retraining pipeline with performance monitoring
 
 ---
 
@@ -43,6 +51,8 @@ GoalGenius is a machine learning project designed to predict the outcome of club
 - `src/` — Feature engineering and data ingestion code
 - `models/` — Model training, evaluation, and utilities
 - `data/` — Raw, processed, and results data
+  - `models/` — Saved model files
+  - `results/` — Training metrics and evaluation results
 - `notebooks/` — EDA and prototyping
 - `requirements.txt` — Project dependencies
 
