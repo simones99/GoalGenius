@@ -5,6 +5,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
+from goalline.benchmark import Benchmark
 from goalline.constants import ODDS_COLUMNS
 from goalline.settings import Settings
 
@@ -28,6 +29,8 @@ def blocks(rows: pd.DataFrame, refit: str) -> list[tuple[pd.Timestamp, pd.DataFr
 
 
 def walk_forward(frame, model, seasons, *, mode: str, settings: Settings) -> pd.DataFrame:
+    if mode not in ("develop", "final"):
+        raise ValueError(f"mode must be 'develop' or 'final', got {mode!r}")
     if mode == "develop" and max(seasons) >= settings.final_first_season:
         raise FinalSeasonError(
             f"develop mode cannot score season {max(seasons)}: "
@@ -43,8 +46,13 @@ def walk_forward(frame, model, seasons, *, mode: str, settings: Settings) -> pd.
             )
         )
     out = pd.concat(parts, ignore_index=True)
-    keep = np.isfinite(out[["p_home", "p_draw", "p_away"]].to_numpy()).all(axis=1)
-    return out[keep].reset_index(drop=True)
+    finite = np.isfinite(out[["p_home", "p_draw", "p_away"]].to_numpy()).all(axis=1)
+    if not finite.all():
+        # Only a benchmark may legitimately fail to price a match (missing odds).
+        if not isinstance(model, Benchmark):
+            raise ValueError(f"{model.name} returned {(~finite).sum()} non-finite probability rows")
+        out = out[finite]
+    return out.reset_index(drop=True)
 
 
 def predict_all(frame, models, seasons, *, mode: str, settings: Settings) -> pd.DataFrame:

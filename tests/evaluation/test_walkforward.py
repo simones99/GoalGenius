@@ -69,3 +69,26 @@ def test_rows_without_probabilities_are_dropped(features):
     out = walk_forward(frame, Benchmark("max_odds"), (2004,), mode="final", settings=SMOKE)
     assert len(out) == len(evaluation_rows(frame, (2004,))) - 1
     assert frame.loc[target, "match_id"] not in set(out.match_id)
+
+
+class NanModel:
+    name = "nanmodel"
+    refit = "season"
+
+    def fit(self, history):
+        return self
+
+    def predict_proba(self, matches):
+        p = np.full((len(matches), 3), 1 / 3)
+        p[0] = np.nan
+        return p
+
+
+def test_non_benchmark_nan_rows_raise(features):
+    with pytest.raises(ValueError, match="non-finite"):
+        walk_forward(features, NanModel(), (2004,), mode="final", settings=SMOKE)
+
+
+def test_unknown_mode_is_rejected(features):
+    with pytest.raises(ValueError, match="mode"):
+        walk_forward(features, Uniform(), (2004,), mode="finel", settings=SMOKE)
