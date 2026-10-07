@@ -119,7 +119,22 @@ def develop(frame: pd.DataFrame, settings: Settings, data_sha256: str) -> Develo
     return DevelopResult(selected=selected, predictions=predictions, grids=grids)
 
 
-def final_predictions(frame: pd.DataFrame, selected: Selected, settings: Settings) -> pd.DataFrame:
+@dataclass(frozen=True)
+class FinalRun:
+    predictions: pd.DataFrame
+    dixon_coles_fits: int
+    dixon_coles_nonconverged: int
+
+
+def final_run(frame: pd.DataFrame, selected: Selected, settings: Settings) -> FinalRun:
     features = build_features(frame, selected.elo)
     models = build_models(selected, settings) + build_benchmarks()
-    return predict_all(features, models, settings.final_seasons, mode="final", settings=settings)
+    predictions = predict_all(
+        features, models, settings.final_seasons, mode="final", settings=settings
+    )
+    dc = next(m for m in models if isinstance(m, DixonColesModel))
+    return FinalRun(predictions, dc.fits_total, dc.fits_nonconverged)
+
+
+def final_predictions(frame: pd.DataFrame, selected: Selected, settings: Settings) -> pd.DataFrame:
+    return final_run(frame, selected, settings).predictions

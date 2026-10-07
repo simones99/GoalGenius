@@ -8,6 +8,7 @@ reference date), over the last WINDOW_DAYS (about three seasons).
 
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass
 
 import numpy as np
@@ -62,6 +63,10 @@ def negative_log_likelihood(theta, hi, ai, x, y, w, n_teams):
     return -ll.sum(), -grad
 
 
+class ConvergenceWarning(RuntimeWarning):
+    """The Dixon–Coles optimiser stopped without meeting its convergence criteria."""
+
+
 @dataclass
 class DixonColesFit:
     teams: dict[str, int]
@@ -69,6 +74,7 @@ class DixonColesFit:
     defence: np.ndarray
     home: float
     rho: float
+    converged: bool = True
 
     def rates(self, home, away) -> tuple[np.ndarray, np.ndarray]:
         mean_defence = float(self.defence.mean())
@@ -96,6 +102,13 @@ def fit_dixon_coles(rows: pd.DataFrame, reference: pd.Timestamp, xi: float) -> D
         negative_log_likelihood, theta0, args=(hi, ai, x, y, w, n),
         jac=True, method="L-BFGS-B", bounds=bounds,
     )
+    if not res.success:
+        warnings.warn(
+            f"Dixon–Coles fit did not converge ({res.message}) for {n} teams "
+            f"as of {reference.date()}",
+            ConvergenceWarning,
+            stacklevel=2,
+        )
     attack, defence = res.x[:n].copy(), res.x[n : 2 * n].copy()
     shift = attack.mean()
     attack -= shift
@@ -103,6 +116,7 @@ def fit_dixon_coles(rows: pd.DataFrame, reference: pd.Timestamp, xi: float) -> D
     return DixonColesFit(
         teams=dict(zip(teams, range(n), strict=True)), attack=attack, defence=defence,
         home=float(res.x[2 * n]), rho=float(res.x[2 * n + 1]),
+        converged=bool(res.success),
     )
 
 
@@ -133,6 +147,8 @@ class DixonColesModel:
 
     def __init__(self, xi: float):
         self.xi = xi
+        self.fits_total = 0
+        self.fits_nonconverged = 0
 
     def fit(self, history: pd.DataFrame) -> DixonColesModel:
         self.fits_: dict[str, DixonColesFit] = {}
@@ -142,7 +158,10 @@ class DixonColesModel:
         start = reference - pd.Timedelta(WINDOW_DAYS, "D")
         for country, rows in history[history.date >= start].groupby("country"):
             if len(rows) >= MIN_MATCHES:
-                self.fits_[country] = fit_dixon_coles(rows, reference, self.xi)
+                fit = fit_dixon_coles(rows, reference, self.xi)
+                self.fits_[country] = fit
+                self.fits_total += 1
+                self.fits_nonconverged += not fit.converged
         return self
 
     def predict_proba(self, matches: pd.DataFrame) -> np.ndarray:

@@ -3,7 +3,9 @@ import pandas as pd
 import pytest
 from scipy.optimize import approx_fprime
 
+from goalline.models import dixon_coles
 from goalline.models.dixon_coles import (
+    ConvergenceWarning,
     DixonColesModel,
     fit_dixon_coles,
     negative_log_likelihood,
@@ -90,3 +92,37 @@ def test_country_without_history_falls_back_to_uniform():
     model = DixonColesModel(xi=0.0).fit(simulated("ITA"))
     p = model.predict_proba(pd.DataFrame({"country": ["ENG"], "home": ["X"], "away": ["Y"]}))
     assert np.allclose(p, 1 / 3)
+
+
+@pytest.fixture
+def one_iteration(monkeypatch):
+    real = dixon_coles.minimize
+    monkeypatch.setattr(
+        dixon_coles, "minimize", lambda *a, **k: real(*a, **k, options={"maxiter": 1})
+    )
+
+
+def test_converged_fit_is_silent_and_counted_as_converged():
+    rows = simulated()
+    fit = fit_dixon_coles(rows, rows.date.max() + pd.Timedelta(1, "D"), xi=0.0)
+    assert fit.converged
+    model = DixonColesModel(xi=0.0).fit(rows)
+    assert (model.fits_total, model.fits_nonconverged) == (1, 0)
+
+
+@pytest.mark.usefixtures("one_iteration")
+def test_nonconvergence_warns_and_is_flagged():
+    rows = simulated()
+    with pytest.warns(ConvergenceWarning, match="did not converge"):
+        fit = fit_dixon_coles(rows, rows.date.max() + pd.Timedelta(1, "D"), xi=0.0)
+    assert not fit.converged
+
+
+@pytest.mark.usefixtures("one_iteration")
+def test_model_counts_nonconverged_fits_across_refits():
+    rows = pd.concat([simulated("ITA"), simulated("ENG", seed=2)], ignore_index=True)
+    model = DixonColesModel(xi=0.0)
+    with pytest.warns(ConvergenceWarning):
+        model.fit(rows)
+        model.fit(rows)
+    assert (model.fits_total, model.fits_nonconverged) == (4, 4)

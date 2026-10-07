@@ -6,6 +6,7 @@ from goalline.data.load import load_matches
 from goalline.evaluation.develop import (
     develop,
     final_predictions,
+    final_run,
     mean_log_loss,
     tune,
     tune_elo,
@@ -57,6 +58,14 @@ def test_final_predictions_cover_final_seasons(result):
     preds = final_predictions(frame, result.selected, SMOKE)
     seasons = set(preds.merge(frame[["match_id", "season"]], on="match_id").season)
     assert seasons == set(SMOKE.final_seasons)
+
+
+def test_final_run_reports_dixon_coles_convergence(result):
+    frame, _ = load_matches(FIXTURE, SMOKE, mode="final")
+    run = final_run(frame, result.selected, SMOKE)
+    assert run.dixon_coles_nonconverged == 0
+    assert run.dixon_coles_fits > 0
+    assert set(run.predictions.model) == set(MODEL_NAMES) | set(REFERENCES)
 
 
 def test_tune_picks_the_argmin_and_its_predictions(dev_frame):
