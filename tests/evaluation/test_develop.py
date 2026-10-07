@@ -1,8 +1,19 @@
+import numpy as np
 import pytest
 
 from goalline.constants import MODEL_NAMES, REFERENCES
 from goalline.data.load import load_matches
-from goalline.evaluation.develop import develop, final_predictions, tune_elo
+from goalline.evaluation.develop import (
+    develop,
+    final_predictions,
+    mean_log_loss,
+    tune,
+    tune_elo,
+)
+from goalline.evaluation.walkforward import FinalSeasonError
+from goalline.features.elo import EloParams
+from goalline.features.table import build_features
+from goalline.models.logistic import LogisticModel
 from helpers import FIXTURE, SMOKE
 
 
@@ -46,3 +57,35 @@ def test_final_predictions_cover_final_seasons(result):
     preds = final_predictions(frame, result.selected, SMOKE)
     seasons = set(preds.merge(frame[["match_id", "season"]], on="match_id").season)
     assert seasons == set(SMOKE.final_seasons)
+
+
+def test_tune_picks_the_argmin_and_its_predictions(dev_frame):
+    features = build_features(dev_frame, EloParams(20, 60, 0.33))
+    candidates = [{"c": 0.001}, {"c": 1.0}, {"c": 100.0}]
+    grid, best, best_preds = tune(
+        features, lambda c: LogisticModel(c, SMOKE.train_first_season), candidates, SMOKE
+    )
+    assert grid.log_loss.nunique() > 1
+    assert best["c"] == grid.loc[grid.log_loss.idxmin(), "c"]
+    assert np.isclose(mean_log_loss(best_preds, dev_frame), grid.log_loss.min())
+
+
+def test_dev_predictions_match_selected_scores(result, dev_frame):
+    for m in ("elo", "dixon_coles", "logistic", "xgboost"):
+        preds = result.predictions[result.predictions.model == m]
+        assert np.isclose(mean_log_loss(preds, dev_frame), result.selected.dev_log_loss[m])
+
+
+def test_selected_elo_is_the_grid_argmin(result, dev_frame):
+    grid = tune_elo(dev_frame, SMOKE)
+    top = grid.loc[grid.log_loss.idxmin()]
+    s = result.selected
+    assert (s.elo.k, s.elo.home_advantage, s.elo.reversion) == (
+        top.k, top.home_advantage, top.reversion)
+    assert (s.draw.peak, s.draw.scale) == (top.draw_peak, top.draw_scale)
+
+
+def test_develop_refuses_a_frame_with_final_seasons():
+    frame, _ = load_matches(FIXTURE, SMOKE, mode="final")
+    with pytest.raises(FinalSeasonError):
+        develop(frame, SMOKE, "sha")

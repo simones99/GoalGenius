@@ -114,7 +114,8 @@ def develop(frame: pd.DataFrame, settings: Settings, data_sha256: str) -> Develo
          lr_grid.assign(model="logistic"), xgb_grid.assign(model="xgboost")],
         ignore_index=True,
     )
-    assert np.isclose(mean_log_loss(predictions[predictions.model == "elo"], frame), top.log_loss)
+    if not np.isclose(mean_log_loss(predictions[predictions.model == "elo"], frame), top.log_loss):
+        raise RuntimeError("Elo walk-forward predictions do not reproduce the Elo grid score")
     return DevelopResult(selected=selected, predictions=predictions, grids=grids)
 
 
