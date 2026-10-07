@@ -40,3 +40,15 @@ def test_interval_contains_the_mean_and_is_seeded():
     assert r1 == r2
     assert r1.lower < r1.mean < r1.upper
     assert r1.mean == pytest.approx((a - b).mean())
+
+
+def test_sign_convention_worse_model_has_positive_mean():
+    # difference = model loss minus reference loss, so a worse model gives a positive mean
+    rng = np.random.default_rng(5)
+    reference = rng.uniform(0.8, 1.0, 400)
+    worse = reference + 0.1 + rng.normal(0, 0.01, 400)
+    clusters = np.repeat(np.arange(40), 10).astype(str)
+    r = paired_bootstrap(worse, reference, clusters, replicates=300)
+    assert r.mean > 0 and r.lower > 0 and r.upper > 0
+    flipped = paired_bootstrap(reference, worse, clusters, replicates=300)
+    assert flipped.mean < 0 and flipped.upper < 0
