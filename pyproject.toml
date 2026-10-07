@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "goal-line-calibration"
+version = "0.1.0"
+description = "Football outcome forecasts scored against de-margined bookmaker odds"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+dependencies = [
+  "pandas>=2.2,<3",
+  "numpy>=2.0,<3",
+  "scipy>=1.13",
+  "scikit-learn>=1.5,<1.8",
+  "xgboost>=2.1,<4",
+  "jinja2>=3.1",
+  "matplotlib>=3.9",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[project.scripts]
+goalline = "goalline.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+goalline = ["report/templates/*.j2"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
