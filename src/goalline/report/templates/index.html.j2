@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>goal-line-calibration</title>
+<style>
+:root { --bg:#fbfbf9; --fg:#1d1d1b; --muted:#666; --line:#ddd; --accent:#0b6e4f; --ref:#f1efe8; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg:#151514; --fg:#ecebe6; --muted:#a3a29c; --line:#333; --accent:#5cc39a; --ref:#22221f; }
+}
+body { background:var(--bg); color:var(--fg); font:16px/1.55 system-ui, sans-serif; margin:0; }
+main { max-width:960px; margin:0 auto; padding:24px 16px 64px; }
+h1 { font-size:1.8rem; margin:0 0 4px; } h2 { margin-top:2.2rem; border-bottom:1px solid var(--line); }
+.lede { font-size:1.15rem; } .muted { color:var(--muted); font-size:.9rem; }
+.table-wrap { overflow-x:auto; }
+table { border-collapse:collapse; width:100%; font-variant-numeric:tabular-nums; font-size:.92rem; }
+th, td { padding:6px 8px; border-bottom:1px solid var(--line); text-align:right; white-space:nowrap; }
+th:first-child, td:first-child { text-align:left; }
+tr.ref td { background:var(--ref); font-weight:600; }
+svg { max-width:100%; height:auto; }
+code { font-size:.9em; }
+</style>
+</head>
+<body>
+<main>
+<h1>goal-line-calibration</h1>
+<p class="muted">How close do statistical and machine-learning models get to the bookmakers' probabilities for home win, draw and away win? Final test {{ season_range }}, {{ meta.n_matches }} first-division matches, scored once with hyperparameters frozen in commit <code>{{ meta.selected_commit }}</code>.</p>
+<p class="lede">{{ headline }}</p>
+
+<h2>Final test</h2>
+<p class="muted">Mean per match; lower is better. The difference is model minus Bet365 (Shin) log loss, with a 95% interval from a paired bootstrap over matchdays.</p>
+<div class="table-wrap"><table>
+<tr><th>Model</th><th>Log loss</th><th>RPS</th><th>Brier</th><th>Δ log loss vs Shin</th><th>95% CI</th></tr>
+{% for r in key_rows %}
+<tr{% if r.is_reference %} class="ref"{% endif %}><td>{{ r.label }}</td><td>{{ "%.4f"|format(r.log_loss) }}</td><td>{{ "%.4f"|format(r.rps) }}</td><td>{{ "%.4f"|format(r.brier) }}</td>
+<td>{% if r.diff is defined %}{{ "%+.4f"|format(r.diff) }}{% else %}—{% endif %}</td>
+<td>{% if r.diff is defined %}{{ "%+.4f"|format(r.lower) }} to {{ "%+.4f"|format(r.upper) }}{% else %}—{% endif %}</td></tr>
+{% endfor %}
+</table></div>
+
+<h2>Serie A</h2>
+<div class="table-wrap"><table>
+<tr><th>Model</th><th>Matches</th><th>Log loss</th><th>RPS</th><th>Brier</th></tr>
+{% for r in serie_a_rows %}
+<tr{% if r.is_reference %} class="ref"{% endif %}><td>{{ r.label }}</td><td>{{ r.n }}</td><td>{{ "%.4f"|format(r.log_loss) }}</td><td>{{ "%.4f"|format(r.rps) }}</td><td>{{ "%.4f"|format(r.brier) }}</td></tr>
+{% endfor %}
+</table></div>
+
+<h2>By league and by season</h2>
+<div class="table-wrap"><table>
+<tr><th>Log loss</th>{% for h in league_table.headers %}<th>{{ h }}</th>{% endfor %}</tr>
+{% for r in league_table.rows %}<tr><td>{{ r.label }}</td>{% for v in r["values"] %}<td>{{ "%.4f"|format(v) }}</td>{% endfor %}</tr>{% endfor %}
+</table></div>
+{{ season_svg|safe }}
+
+<h2>Calibration</h2>
+<p class="muted">Ten equal-count bins per outcome. Points on the dashed line are perfectly calibrated.</p>
+{{ reliability_svg|safe }}
+<div class="table-wrap"><table>
+<tr><th>Expected calibration error</th><th>Home</th><th>Draw</th><th>Away</th></tr>
+{% for r in ece_rows %}<tr><td>{{ r.label }}</td><td>{{ r.H }}</td><td>{{ r.D }}</td><td>{{ r.A }}</td></tr>{% endfor %}
+</table></div>
+
+<h2>Sensitivity</h2>
+<p class="muted">The same comparison against proportionally de-margined Bet365 odds and against the best price across about 17 bookmakers. {{ meta.max_odds_arbitrage }} test matches have best prices whose implied probabilities sum to less than one; they are normalised anyway.</p>
+<div class="table-wrap"><table>
+<tr><th>Model</th><th>Reference</th><th>Matches</th><th>Δ log loss</th><th>95% CI</th></tr>
+{% for r in sensitivity_rows %}<tr><td>{{ r.label }}</td><td>{{ r.reference }}</td><td>{{ r.n }}</td><td>{{ "%+.4f"|format(r.diff) }}</td><td>{{ "%+.4f"|format(r.lower) }} to {{ "%+.4f"|format(r.upper) }}</td></tr>{% endfor %}
+</table></div>
+<h3>Models against each other</h3>
+<div class="table-wrap"><table>
+<tr><th>Model</th><th>Against</th><th>Δ log loss</th><th>95% CI</th></tr>
+{% for r in pair_rows %}<tr><td>{{ r.label }}</td><td>{{ r.reference }}</td><td>{{ "%+.4f"|format(r.diff) }}</td><td>{{ "%+.4f"|format(r.lower) }} to {{ "%+.4f"|format(r.upper) }}</td></tr>{% endfor %}
+</table></div>
+<p class="muted">Intervals, not p-values: with this many comparisons, an interval that excludes zero is evidence, not proof.</p>
+
+<h2>Development and frozen hyperparameters</h2>
+<p class="muted">Chosen by mean log loss over the walk-forward development seasons 2005-06 to 2020-21, then frozen before the final test.</p>
+<div class="table-wrap"><table>
+<tr><th>Model</th><th>Hyperparameters</th><th>Development log loss</th></tr>
+<tr><td>Elo</td><td>K {{ selected.elo.k }}, H {{ selected.elo.home_advantage }}, reversion {{ selected.elo.reversion }}, draw peak {{ selected.elo.draw_peak }}, scale {{ selected.elo.draw_scale }}</td><td>{{ "%.4f"|format(selected.dev_log_loss.elo) }}</td></tr>
+<tr><td>Dixon–Coles</td><td>ξ {{ selected.dixon_coles.xi }} per day</td><td>{{ "%.4f"|format(selected.dev_log_loss.dixon_coles) }}</td></tr>
+<tr><td>Logistic regression</td><td>C {{ selected.logistic.c }}</td><td>{{ "%.4f"|format(selected.dev_log_loss.logistic) }}</td></tr>
+<tr><td>XGBoost</td><td>depth {{ selected.xgboost.max_depth }}, learning rate {{ selected.xgboost.learning_rate }}, min child weight {{ selected.xgboost.min_child_weight }}</td><td>{{ "%.4f"|format(selected.dev_log_loss.xgboost) }}</td></tr>
+</table></div>
+
+<h2>Home advantage and 2020-21</h2>
+<p class="muted">Share of home wins per season. In 2020-21 most matches were played without crowds; the models use one home advantage for every league and season and do not adjust for it.</p>
+{{ home_adv_svg|safe }}
+
+<h2>Data</h2>
+<p>Matches and odds come from <a href="https://github.com/xgabora/Club-Football-Match-Data">xgabora/Club-Football-Match-Data</a> (MIT licence), which collects results and odds from <a href="https://www.football-data.co.uk/">Football-Data.co.uk</a> and Elo snapshots from <a href="http://clubelo.com/">ClubElo</a>. Only results, dates and odds are used; Elo and form are recomputed here. File SHA-256 <code>{{ meta.data_sha256 }}</code>.</p>
+<div class="table-wrap"><table>
+<tr><th>Quality check</th><th>Rows</th></tr>
+{% for r in quality_rows %}<tr><td>{{ r.check }}</td><td>{{ r["count"] }}</td></tr>{% else %}<tr><td>No rows dropped</td><td>0</td></tr>{% endfor %}
+</table></div>
+
+<h2>Limitations</h2>
+<ul>
+<li>The bookmakers know things the models do not: injuries, line-ups, news.</li>
+<li>The Bet365 columns are documented only as match odds; they need not be closing odds, which would be a harder benchmark.</li>
+<li>Elo and Dixon–Coles see only domestic league matches; cups and European games are missing.</li>
+<li>One home advantage for all leagues, and no special treatment of the 2020-21 season.</li>
+<li>This is a forecast evaluation, not a betting strategy.</li>
+</ul>
+
+<h2>Reproduce</h2>
+<pre><code>pip install -e .
+goalline download    # pinned file, SHA-256 checked
+goalline validate
+goalline develop     # slow: tunes every model on 2005-06 to 2020-21
+goalline final       # uses config/selected.json
+goalline report</code></pre>
+<p class="muted">Generated {{ meta.generated }}.</p>
+</main>
+</body>
+</html>

@@ -18,6 +18,7 @@ from goalline.evaluation.develop import develop, final_predictions
 from goalline.evaluation.outputs import home_advantage, write_outputs
 from goalline.evaluation.selection import read_selected, write_selected
 from goalline.evaluation.walkforward import evaluation_rows
+from goalline.report.render import render
 from goalline.settings import Settings
 
 
@@ -121,11 +122,17 @@ def run_final(paths: Paths, settings: Settings) -> None:
     print(pd.read_csv(paths.output / "final" / "metrics.csv").query("group_type == 'overall'"))
 
 
+def run_report(paths: Paths, settings: Settings) -> None:
+    path = render(paths.output, paths.site, paths.config)
+    print(f"report written to {path}")
+
+
 COMMANDS = {
     "download": lambda paths, settings: run_download(paths),
     "validate": run_validate,
     "develop": run_develop,
     "final": run_final,
+    "report": run_report,
 }
 
 
