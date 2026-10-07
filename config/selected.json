@@ -1,0 +1,27 @@
+{
+  "elo": {
+    "k": 20.0,
+    "home_advantage": 100.0,
+    "reversion": 0.0,
+    "draw_peak": 0.3,
+    "draw_scale": 300.0
+  },
+  "dixon_coles": {
+    "xi": 0.0019
+  },
+  "logistic": {
+    "c": 0.1
+  },
+  "xgboost": {
+    "max_depth": 2,
+    "learning_rate": 0.1,
+    "min_child_weight": 10
+  },
+  "dev_log_loss": {
+    "elo": 0.9921135748035271,
+    "dixon_coles": 0.9876145230555888,
+    "logistic": 0.9901789655608361,
+    "xgboost": 0.9911118745803833
+  },
+  "data_sha256": "ef224cf2c252f07a842b3bcfd4ba5c718c25cedd8937ffa174a74b86b5ba4221"
+}
