@@ -1,5 +1,6 @@
 import hashlib
 import json
+import urllib.error
 
 import pytest
 
@@ -63,3 +64,21 @@ def test_repository_manifest_is_pinned():
     assert m.commit == "25882a58a736daf7ece3781940eac17ae1117a66"
     assert m.commit in m.url
     assert m.sha256 == "ef224cf2c252f07a842b3bcfd4ba5c718c25cedd8937ffa174a74b86b5ba4221"
+
+
+def test_truncated_download_raises_checksum_error_and_leaves_no_file(tmp_path, monkeypatch):
+    dest = tmp_path / "raw" / "Matches.csv"
+
+    def fake_urlretrieve(url, filename):
+        # Write a partial file to simulate truncated download
+        import pathlib
+        pathlib.Path(filename).write_text("partial")
+        raise urllib.error.ContentTooShortError("truncated", None)
+
+    monkeypatch.setattr("urllib.request.urlretrieve", fake_urlretrieve)
+
+    manifest = Manifest("http://example.com/file.csv", "c", "s", "r")
+    with pytest.raises(ChecksumError):
+        download(manifest, dest)
+    assert not dest.exists()
+    assert list(dest.parent.iterdir()) == []

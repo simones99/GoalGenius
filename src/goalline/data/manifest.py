@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import tempfile
+import urllib.error
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
@@ -52,7 +53,13 @@ def download(manifest: Manifest, dest: Path) -> Path:
     os.close(fd)
     tmp = Path(tmp_name)
     try:
-        urllib.request.urlretrieve(manifest.url, tmp)
+        try:
+            urllib.request.urlretrieve(manifest.url, tmp)
+        except urllib.error.ContentTooShortError as e:
+            raise ChecksumError(
+                f"Download of {manifest.url} was interrupted or truncated. "
+                "Run `goalline download` again."
+            ) from e
         verify(tmp, manifest)
         tmp.replace(dest)
     finally:
