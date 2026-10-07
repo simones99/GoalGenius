@@ -1,9 +1,11 @@
+from pathlib import Path
+
 import pandas as pd
 import numpy as np
 
 # Load matches data
 print("Loading data...")
-df = pd.read_csv('/Users/simonemezzabotta/Coding_Projects/GoalGenius/data/raw/Matches.csv', parse_dates=['MatchDate'])
+df = pd.read_csv(Path(__file__).resolve().parents[2] / 'data' / 'raw' / 'Matches.csv', parse_dates=['MatchDate'])
 
 # Check statistics availability by year
 stats_cols = ['HomeShots', 'AwayShots', 'HomeTarget', 'AwayTarget', 

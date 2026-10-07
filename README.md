@@ -1,10 +1,10 @@
 # GoalGenius
 
-GoalGenius is a machine learning project designed to predict the outcome of club football matches (home win, draw, away win) using historical data and real-time features. The project leverages Python, pandas, scikit-learn, XGBoost, and modern MLOps practices to build, evaluate, and serve predictive models.
+GoalGenius is a machine learning project that predicts the outcome of club football matches (home win, draw, away win) from historical match data and Elo ratings (2000–2025). It uses Python, pandas, scikit-learn and XGBoost, with time-based splits to avoid look-ahead leakage.
 
 ## Project Goal
-- **Objective:** Achieve high-accuracy, low log-loss predictions for football match outcomes using a combination of historical CSV data and real-time API-Football data.
-- **Use Case:** Provide real-time match forecasts via a FastAPI endpoint and a Streamlit dashboard for demo and analysis.
+- **Objective:** Produce well-calibrated, low log-loss probabilities for football match outcomes from historical CSV data.
+- **Status:** Offline training and evaluation pipeline. A prediction API and dashboard are planned (see Next Steps) and not implemented yet.
 
 ## Achievements So Far
 - **Data Pipeline:**
@@ -24,6 +24,35 @@ GoalGenius is a machine learning project designed to predict the outcome of club
   - Automated model training and evaluation pipeline
   - Improved error handling and logging
   - Set up .gitignore and requirements.txt for clean version control and reproducibility
+
+## Results
+
+Validation metrics from `python -m models.train` (saved in `data/results/metrics_ensemble_20250531_131355.json`). The split is by date: 45,073 training matches and 691 validation matches (Feb–Aug 2024). Baselines are computed on the same validation period, using class frequencies from the training period.
+
+| Model | Accuracy | Log loss |
+|---|---|---|
+| Logistic regression (Elo diff, form diff, head-to-head, derby) | 0.498 | 1.029 |
+| Majority class (always home win) | 0.412 | — |
+| Training-period class frequencies | — | 1.087 |
+| Uniform guess | 0.333 | 1.099 |
+
+The model beats the naive baselines, but three-way football outcomes are hard to predict and bookmaker-implied probabilities are the usual benchmark. The validation set was also used for model selection, so these numbers are slightly optimistic. The logistic regression result reproduces exactly with the pinned requirements.
+
+### Known issues
+- The XGBoost step fails with XGBoost 3.x because `auc_mu` is not a valid `eval_metric`.
+- The stacking ensemble fails because `cross_val_predict` does not accept `TimeSeriesSplit`.
+
+## How to run
+
+```bash
+python -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+# Place Matches.csv and EloRatings.csv in data/raw/
+python -m models.train            # baseline models (logistic, random forest, XGBoost)
+python -m models.train_ensemble   # stacking ensemble
+```
+
+Metrics are written to `data/results/`. Trained models are saved to `data/models/` and are not tracked in git.
 
 ## Next Steps
 - **Feature Engineering:**
@@ -51,7 +80,7 @@ GoalGenius is a machine learning project designed to predict the outcome of club
 - `src/` — Feature engineering and data ingestion code
 - `models/` — Model training, evaluation, and utilities
 - `data/` — Raw, processed, and results data
-  - `models/` — Saved model files
+  - `models/` — Saved model files (not tracked)
   - `results/` — Training metrics and evaluation results
 - `notebooks/` — EDA and prototyping
 - `requirements.txt` — Project dependencies

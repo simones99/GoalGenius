@@ -174,3 +174,6 @@ cython_debug/
 .pypirc
 data/cache/
 data/raw/
+
+# Trained model artifacts (reproducible with models/train*.py)
+data/models/*.pkl

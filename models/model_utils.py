@@ -66,10 +66,10 @@ def train_evaluate_model(model_class: Any,
     # Handle XGBoost specific parameters
     fit_params = {}
     if model_type == 'xgboost':
-        early_stopping_rounds = model_params.pop('early_stopping_rounds', 50)
+        # XGBoost >= 2.0 takes early_stopping_rounds in the constructor, not in fit()
+        model_params.setdefault('early_stopping_rounds', 50)
         fit_params = {
             'eval_set': [(X_val_scaled, y_val)],
-            'early_stopping_rounds': early_stopping_rounds,
             'verbose': False
         }
         
