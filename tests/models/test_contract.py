@@ -10,6 +10,7 @@ from goalline.models.dixon_coles import DixonColesModel
 from goalline.models.elo_model import DrawParams, EloModel
 from goalline.models.logistic import LogisticModel
 from goalline.models.simple import Frequency, Uniform
+from goalline.models.xgb import XGBoostModel
 
 CASES: list[tuple[str, Callable]] = [
     ("uniform", lambda: Uniform()),
@@ -20,6 +21,7 @@ CASES: list[tuple[str, Callable]] = [
     ("proportional", lambda: Benchmark("proportional")),
     ("max_odds", lambda: Benchmark("max_odds")),
     ("logistic", lambda: LogisticModel(c=1.0, train_first_season=2000)),
+    ("xgboost", lambda: XGBoostModel(2, 0.1, 1, train_first_season=2000)),
 ]
 
 
