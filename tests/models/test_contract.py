@@ -34,7 +34,8 @@ def test_contract(name, factory, features):
     assert model.refit in ("season", "month")
     p = model.fit(history).predict_proba(target)
     assert p.shape == (len(target), 3)
-    assert np.allclose(p.sum(axis=1), 1, atol=1e-9)
+    assert p.dtype == np.float64
+    np.testing.assert_allclose(p.sum(axis=1), 1, rtol=0, atol=1e-9)
     assert (p > 0).all()
     shuffled = target.sample(frac=1, random_state=0)
     q = model.predict_proba(shuffled)

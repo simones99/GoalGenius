@@ -56,4 +56,6 @@ class XGBoostModel:
         return self
 
     def predict_proba(self, matches: pd.DataFrame) -> np.ndarray:
-        return self.model_.predict_proba(matches[FEATURE_COLUMNS].to_numpy(dtype=float))
+        raw = self.model_.predict_proba(matches[FEATURE_COLUMNS].to_numpy(dtype=float))
+        p = np.asarray(raw, dtype=np.float64)
+        return p / p.sum(axis=1, keepdims=True)
