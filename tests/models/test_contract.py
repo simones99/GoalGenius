@@ -6,11 +6,13 @@ import numpy as np
 import pytest
 
 from goalline.benchmark import Benchmark
+from goalline.models.elo_model import DrawParams, EloModel
 from goalline.models.simple import Frequency, Uniform
 
 CASES: list[tuple[str, Callable]] = [
     ("uniform", lambda: Uniform()),
     ("frequency", lambda: Frequency(train_first_season=2000)),
+    ("elo", lambda: EloModel(DrawParams(0.28, 400))),
     ("shin", lambda: Benchmark("shin")),
     ("proportional", lambda: Benchmark("proportional")),
     ("max_odds", lambda: Benchmark("max_odds")),
