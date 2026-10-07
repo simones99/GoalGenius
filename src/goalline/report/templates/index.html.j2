@@ -26,7 +26,7 @@ pre { overflow-x:auto; }
 <body>
 <main>
 <h1>goal-line-calibration</h1>
-<p class="muted">How close do statistical and machine-learning models get to the bookmakers' probabilities for home win, draw and away win? Final test {{ season_range }}, {{ meta.n_matches }} first-division matches, scored once with hyperparameters frozen in commit <code>{{ meta.selected_commit }}</code>.</p>
+<p class="muted">How close do statistical and machine-learning models get to the bookmakers' probabilities for home win, draw and away win? Final test {{ season_range }}, {{ meta.n_matches }} first-division matches, scored once with hyperparameters frozen in commit <code>{{ meta.selected_commit }}</code>, by code at commit <code>{{ meta.code_commit }}</code>{% if meta.code_dirty %} (with uncommitted changes){% endif %}.</p>
 <p class="lede">{{ headline }}</p>
 
 <h2>Final test</h2>
@@ -64,7 +64,7 @@ pre { overflow-x:auto; }
 </table></div>
 
 <h2>Sensitivity</h2>
-<p class="muted">The same comparison against proportionally de-margined Bet365 odds and against the best price across about 17 bookmakers. {{ meta.max_odds_arbitrage }} test matches have best prices whose implied probabilities sum to less than one; they are normalised anyway.</p>
+<p class="muted">The same comparison against proportionally de-margined Bet365 odds and against the best price reported in the data (its MaxHome, MaxDraw and MaxAway columns). {{ meta.max_odds_arbitrage }} test matches have best prices whose implied probabilities sum to less than one; they are normalised anyway.</p>
 <div class="table-wrap"><table>
 <tr><th>Model</th><th>Reference</th><th>Matches</th><th>Δ log loss</th><th>95% CI</th></tr>
 {% for r in sensitivity_rows %}<tr><td>{{ r.label }}</td><td>{{ r.reference }}</td><td>{{ r.n }}</td><td>{{ "%+.4f"|format(r.diff) }}</td><td>{{ "%+.4f"|format(r.lower) }} to {{ "%+.4f"|format(r.upper) }}</td></tr>{% endfor %}
@@ -77,7 +77,7 @@ pre { overflow-x:auto; }
 <p class="muted">Intervals, not p-values: with this many comparisons, an interval that excludes zero is evidence, not proof.</p>
 
 <h2>Development and frozen hyperparameters</h2>
-<p class="muted">Chosen by mean log loss over the walk-forward development seasons 2005-06 to 2020-21, then frozen before the final test, in commit <code>{{ meta.selected_commit }}</code>.</p>
+<p class="muted">Chosen by mean log loss over the walk-forward development seasons 2005-06 to 2020-21, then frozen before the final test, in commit <code>{{ meta.selected_commit }}</code>. The final test ran with code at commit <code>{{ meta.code_commit }}</code>{% if meta.code_dirty %} (with uncommitted changes){% endif %}.</p>
 <div class="table-wrap"><table>
 <tr><th>Model</th><th>Hyperparameters</th><th>Development log loss</th></tr>
 <tr><td>Elo</td><td>K {{ '%g' % selected.elo.k }}, H {{ '%g' % selected.elo.home_advantage }}, reversion {{ '%g' % selected.elo.reversion }}, draw peak {{ '%g' % selected.elo.draw_peak }}, scale {{ '%g' % selected.elo.draw_scale }}</td><td>{{ "%.4f"|format(selected.dev_log_loss.elo) }}</td></tr>
@@ -107,13 +107,13 @@ pre { overflow-x:auto; }
 </ul>
 
 <h2>Reproduce</h2>
-<pre><code>pip install -e .
+<pre><code>pip install -r requirements-lock.txt &amp;&amp; pip install -e . --no-deps
 goalline download    # pinned file, SHA-256 checked
 goalline validate
 goalline develop     # slow: tunes every model on 2005-06 to 2020-21
 goalline final       # uses config/selected.json
 goalline report</code></pre>
-<p class="muted">Generated {{ meta.generated }}.</p>
+<p class="muted">Generated {{ meta.generated }} from code commit <code>{{ meta.code_commit }}</code>{% if meta.code_dirty %} (with uncommitted changes){% endif %}, hyperparameters from commit <code>{{ meta.selected_commit }}</code>. Environment: {% for name, v in meta.environment.items() %}{{ name }} {{ v }}{% if not loop.last %}, {% endif %}{% endfor %}. Dixon–Coles fits that did not converge: {{ meta.dixon_coles_nonconverged }} of {{ meta.dixon_coles_fits }}.</p>
 </main>
 </body>
 </html>

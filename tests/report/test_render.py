@@ -1,3 +1,5 @@
+import json
+
 import pandas as pd
 
 from goalline.cli import run_report
@@ -50,3 +52,14 @@ def test_report_page(pipeline_run):
         assert text in html, text
     assert html.count("<svg") >= 3
     assert "<script src" not in html
+
+
+def test_report_shows_code_commit_environment_and_honest_odds_wording(pipeline_run):
+    run_report(pipeline_run, SMOKE)
+    html = (pipeline_run.site / "index.html").read_text()
+    meta = json.loads((pipeline_run.output / "final" / "final_meta.json").read_text())
+    assert html.count(meta["code_commit"]) >= 2
+    assert html.count(meta["selected_commit"]) >= 2
+    assert f"xgboost {meta['environment']['xgboost']}" in html
+    assert "bookmakers" not in html.split("<h2>Sensitivity</h2>")[1].split("</p>")[0]
+    assert "best price reported in the data" in html
