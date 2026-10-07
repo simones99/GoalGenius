@@ -19,7 +19,8 @@ th, td { padding:6px 8px; border-bottom:1px solid var(--line); text-align:right;
 th:first-child, td:first-child { text-align:left; }
 tr.ref td { background:var(--ref); font-weight:600; }
 svg { max-width:100%; height:auto; }
-code { font-size:.9em; }
+code { font-size:.9em; overflow-wrap:anywhere; }
+pre { overflow-x:auto; }
 </style>
 </head>
 <body>
@@ -59,7 +60,7 @@ code { font-size:.9em; }
 {{ reliability_svg|safe }}
 <div class="table-wrap"><table>
 <tr><th>Expected calibration error</th><th>Home</th><th>Draw</th><th>Away</th></tr>
-{% for r in ece_rows %}<tr><td>{{ r.label }}</td><td>{{ r.H }}</td><td>{{ r.D }}</td><td>{{ r.A }}</td></tr>{% endfor %}
+{% for r in ece_rows %}<tr><td>{{ r.label }}</td><td>{{ "%.4f"|format(r.H) }}</td><td>{{ "%.4f"|format(r.D) }}</td><td>{{ "%.4f"|format(r.A) }}</td></tr>{% endfor %}
 </table></div>
 
 <h2>Sensitivity</h2>
@@ -76,13 +77,13 @@ code { font-size:.9em; }
 <p class="muted">Intervals, not p-values: with this many comparisons, an interval that excludes zero is evidence, not proof.</p>
 
 <h2>Development and frozen hyperparameters</h2>
-<p class="muted">Chosen by mean log loss over the walk-forward development seasons 2005-06 to 2020-21, then frozen before the final test.</p>
+<p class="muted">Chosen by mean log loss over the walk-forward development seasons 2005-06 to 2020-21, then frozen before the final test, in commit <code>{{ meta.selected_commit }}</code>.</p>
 <div class="table-wrap"><table>
 <tr><th>Model</th><th>Hyperparameters</th><th>Development log loss</th></tr>
-<tr><td>Elo</td><td>K {{ selected.elo.k }}, H {{ selected.elo.home_advantage }}, reversion {{ selected.elo.reversion }}, draw peak {{ selected.elo.draw_peak }}, scale {{ selected.elo.draw_scale }}</td><td>{{ "%.4f"|format(selected.dev_log_loss.elo) }}</td></tr>
-<tr><td>Dixon–Coles</td><td>ξ {{ selected.dixon_coles.xi }} per day</td><td>{{ "%.4f"|format(selected.dev_log_loss.dixon_coles) }}</td></tr>
-<tr><td>Logistic regression</td><td>C {{ selected.logistic.c }}</td><td>{{ "%.4f"|format(selected.dev_log_loss.logistic) }}</td></tr>
-<tr><td>XGBoost</td><td>depth {{ selected.xgboost.max_depth }}, learning rate {{ selected.xgboost.learning_rate }}, min child weight {{ selected.xgboost.min_child_weight }}</td><td>{{ "%.4f"|format(selected.dev_log_loss.xgboost) }}</td></tr>
+<tr><td>Elo</td><td>K {{ '%g' % selected.elo.k }}, H {{ '%g' % selected.elo.home_advantage }}, reversion {{ '%g' % selected.elo.reversion }}, draw peak {{ '%g' % selected.elo.draw_peak }}, scale {{ '%g' % selected.elo.draw_scale }}</td><td>{{ "%.4f"|format(selected.dev_log_loss.elo) }}</td></tr>
+<tr><td>Dixon–Coles</td><td>ξ {{ '%g' % selected.dixon_coles.xi }} per day</td><td>{{ "%.4f"|format(selected.dev_log_loss.dixon_coles) }}</td></tr>
+<tr><td>Logistic regression</td><td>C {{ '%g' % selected.logistic.c }}</td><td>{{ "%.4f"|format(selected.dev_log_loss.logistic) }}</td></tr>
+<tr><td>XGBoost</td><td>depth {{ '%g' % selected.xgboost.max_depth }}, learning rate {{ '%g' % selected.xgboost.learning_rate }}, min child weight {{ '%g' % selected.xgboost.min_child_weight }}</td><td>{{ "%.4f"|format(selected.dev_log_loss.xgboost) }}</td></tr>
 </table></div>
 
 <h2>Home advantage and 2020-21</h2>

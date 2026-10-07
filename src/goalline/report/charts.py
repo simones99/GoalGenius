@@ -12,9 +12,11 @@ import pandas as pd  # noqa: E402
 
 from goalline.constants import LEAGUE_NAMES, MODEL_LABELS, OUTCOMES  # noqa: E402
 
+GREY = "#8a8a85"  # reads on both light and dark pages
+
 plt.rcParams.update(
-    {"font.size": 9, "axes.edgecolor": "#888", "axes.labelcolor": "#666", "text.color": "#666",
-     "xtick.color": "#666", "ytick.color": "#666", "svg.fonttype": "none",
+    {"font.size": 9, "axes.edgecolor": GREY, "axes.labelcolor": GREY, "text.color": GREY,
+     "xtick.color": GREY, "ytick.color": GREY, "svg.fonttype": "none",
      "axes.spines.top": False, "axes.spines.right": False}
 )
 
@@ -28,7 +30,7 @@ def _svg(fig) -> str:
 
 
 def reliability_chart(reliability: pd.DataFrame, models) -> str:
-    fig, axes = plt.subplots(1, 3, figsize=(10, 3.3), sharey=True)
+    fig, axes = plt.subplots(1, 3, figsize=(10, 3.6), sharey=True)
     for ax, outcome, title in zip(axes, OUTCOMES, ("Home win", "Draw", "Away win"), strict=True):
         ax.plot([0, 1], [0, 1], color="#bbb", lw=1, ls="--")
         for model in models:

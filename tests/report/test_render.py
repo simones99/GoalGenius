@@ -1,6 +1,7 @@
 import pandas as pd
 
 from goalline.cli import run_report
+from goalline.report import render as render_module
 from goalline.report.render import headline
 from helpers import SMOKE
 
@@ -23,7 +24,21 @@ def test_headline_when_a_model_wins():
 
 
 def test_headline_when_indistinguishable():
-    assert "indistinguishable" in headline(boot(0.0, -0.01, 0.01))
+    assert "no clear difference" in headline(boot(0.0, -0.01, 0.01))
+
+
+def test_headline_uses_any_model_whose_interval_is_below_zero():
+    frame = boot(0.0, -0.01, 0.01)
+    frame.loc[frame.model == "elo", ["mean", "lower", "upper"]] = [-0.05, -0.10, 0.01]
+    frame.loc[frame.model == "dixon_coles", ["mean", "lower", "upper"]] = [-0.02, -0.03, -0.01]
+    text = headline(frame)
+    assert "beats the de-margined" in text and text.startswith("Dixon")
+
+
+def test_template_autoescapes():
+    env = render_module._environment()
+    assert env.from_string("{{ x }}").render(x="<b>") == "&lt;b&gt;"
+    assert "_environment" in render_module.render.__code__.co_names
 
 
 def test_report_page(pipeline_run):

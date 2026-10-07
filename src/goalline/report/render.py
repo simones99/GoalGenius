@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 
 import pandas as pd
-from jinja2 import Environment, PackageLoader, select_autoescape
+from jinja2 import Environment, PackageLoader, StrictUndefined
 
 from goalline.constants import LEAGUE_NAMES, MAIN_MODELS, MODEL_LABELS, MODEL_NAMES
 from goalline.data.load import season_label
@@ -19,16 +19,19 @@ def headline(bootstrap: pd.DataFrame) -> str:
         (bootstrap.reference == "shin") & (bootstrap.metric == "log_loss")
         & bootstrap.model.isin(MAIN_MODELS)
     ]
+    winners = rows[rows.upper < 0]
+    if not winners.empty:
+        best = winners.loc[winners["mean"].idxmin()]
+        return (f"{MODEL_LABELS[best.model]} beats the de-margined Bet365 probabilities: "
+                f"log loss lower by {-best['mean']:.4f} "
+                f"(95% CI {-best.upper:.4f} to {-best.lower:.4f}).")
     best = rows.loc[rows["mean"].idxmin()]
     label = MODEL_LABELS[best.model]
-    if best.upper < 0:
-        return (f"{label} beats the de-margined Bet365 probabilities: log loss lower by "
-                f"{-best['mean']:.4f} (95% CI {-best.upper:.4f} to {-best.lower:.4f}).")
     if best.lower > 0:
         return (f"No model beats the de-margined Bet365 probabilities. The closest, {label}, "
                 f"has a log loss higher by {best['mean']:.4f} "
                 f"(95% CI {best.lower:.4f} to {best.upper:.4f}).")
-    return (f"The closest model, {label}, is statistically indistinguishable from the "
+    return (f"The closest model, {label}, shows no clear difference from the "
             f"de-margined Bet365 probabilities: log-loss difference {best['mean']:+.4f} "
             f"(95% CI {best.lower:+.4f} to {best.upper:+.4f}).")
 
@@ -87,8 +90,9 @@ def build_context(output_dir: Path, selected_path: Path) -> dict:
                               & bootstrap.reference.isin(MAIN_MODELS)].iterrows()
     ]
     ece = [
-        {"label": MODEL_LABELS[m], **expected_calibration_error(t).round(4).to_dict()}
-        for m, t in reliability.groupby("model") if m in (*MAIN_MODELS, "shin")
+        {"label": MODEL_LABELS[m],
+         **expected_calibration_error(reliability[reliability.model == m]).to_dict()}
+        for m in (*MAIN_MODELS, "shin") if m in set(reliability.model)
     ]
     seasons = meta["seasons"]
     return {
@@ -99,7 +103,7 @@ def build_context(output_dir: Path, selected_path: Path) -> dict:
         "serie_a_rows": _key_rows(metrics, bootstrap, "division", "I1"),
         "league_table": league_table,
         "season_svg": charts.season_chart(metrics, (*MAIN_MODELS, "shin")),
-        "reliability_svg": charts.reliability_chart(reliability, ("elo", "dixon_coles", "shin")),
+        "reliability_svg": charts.reliability_chart(reliability, (*MAIN_MODELS, "shin")),
         "ece_rows": ece,
         "sensitivity_rows": sensitivity,
         "pair_rows": pairs,
@@ -109,11 +113,17 @@ def build_context(output_dir: Path, selected_path: Path) -> dict:
     }
 
 
-def render(output_dir: Path, site_dir: Path, selected_path: Path) -> Path:
-    env = Environment(
-        loader=PackageLoader("goalline", "report/templates"), autoescape=select_autoescape()
+def _environment() -> Environment:
+    return Environment(
+        loader=PackageLoader("goalline", "report/templates"),
+        autoescape=True,
+        undefined=StrictUndefined,
     )
-    html = env.get_template("index.html.j2").render(**build_context(output_dir, selected_path))
+
+
+def render(output_dir: Path, site_dir: Path, selected_path: Path) -> Path:
+    context = build_context(output_dir, selected_path)
+    html = _environment().get_template("index.html.j2").render(**context)
     site_dir = Path(site_dir)
     site_dir.mkdir(parents=True, exist_ok=True)
     path = site_dir / "index.html"
